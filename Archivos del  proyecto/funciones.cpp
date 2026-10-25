@@ -1,10 +1,36 @@
 #include "funciones.h"
-#include <string.h>
+#include "MyString.h"
 #include <ctype.h>
+#include <time.h>
 #include <windows.h>
 #include <conio.h>
 #include <iomanip>
 using namespace std;
+
+const double MAX_ID = 9999999999.0;   // documento de hasta 10 digitos
+
+//=============== TABLAS DE TIPOS Y PREMIOS ===============//
+// Un solo lugar con los textos y los puntos: se acabaron los switch repetidos.
+static const char TIPOS[5][60] = {
+    "Publicacion en revista internacional indexada",
+    "Publicacion en revista nacional",
+    "Ponencia en congreso internacional",
+    "Ponencia en congreso nacional",
+    "Articulo en boletin o revista estudiantil"
+};
+static const int PUNTOS_BASE[5] = {10, 7, 5, 3, 1};
+
+static const char PREMIOS[4][60] = {
+    "Primer lugar o mejor ponencia internacional",
+    "Segundo o tercer lugar en ponencia internacional",
+    "Premio nacional o mencion especial",
+    "Sin premio o reconocimiento"
+};
+static const int PUNTOS_ADIC[4] = {5, 3, 2, 0};
+
+static const char COLORES[7][60] = {
+    "Rojo", "Verde", "Amarillo", "Azul", "Magenta", "Cian", "Blanco"
+};
 
 //===== DEFINICIONES DE FUNCIONES ====//
 
@@ -29,7 +55,7 @@ void presentacion(void){
         "                                           "
     };
 
-    //Impresi�n del logo.
+    //Impresión del logo.
     int alineador = 15;
     for (int i = 0; i < 9; i++) {
         cout << setw(alineador) << "" << logo[i] << endl;
@@ -70,6 +96,7 @@ void presentacion(void){
     barra[16]='%';
     barra[17]='\0';
     
+		cout << "\033[?25l";   // oculta el cursor mientras carga
 		cout << setw(alineador_barra) << "";
         cout << "\x1b""7";
 	    for(int porcentaje = 0; porcentaje <= 100; porcentaje++){
@@ -122,8 +149,8 @@ void cad_cpy(char destino[], const char origen[]){
 
 void mostrar_error_en(const char mensaje[], const char error[]){
 	int columna = cad_l(mensaje) + 1;
-	cout << "\033[1A\033["<<columna<<"G";
-	cout << "\033[J <EROR, " << error << ">";
+	cout << "\0338\033["<<columna<<"G";
+	cout << "\033[J <ERROR, " << error << ">";
 	getch();
 	cout<<"\r\033[2K";
 }
@@ -136,12 +163,14 @@ double leer(bool esNumero, const char mensaje[], double minimo, double maximo, c
 	{
 		cout << mensaje << "\x1b""7";
 		bool vacio = false;
+		bool largo = false;
 		if (!esNumero){
 			cin.getline(texto, (int)maximo+1);
 			if(cin.fail()){
+				largo = !cin.eof();
 				cin.clear();
 				cin.ignore(10000, '\n');
-				vacio = true;
+				vacio = !largo;
 			}else if(cad_l(texto)>0){
 				return 0;
 			}else{
@@ -158,7 +187,9 @@ double leer(bool esNumero, const char mensaje[], double minimo, double maximo, c
 			}
 		}
 		
-		if(vacio){
+		if(largo){
+			mostrar_error_en(mensaje, "Dato demasiado largo");
+		}else if(vacio){
 			mostrar_error_en(mensaje, "Dato Vacio");
 		}else{
 			mostrar_error_en(mensaje, "Dato invalido o fuera de rango");
@@ -180,278 +211,312 @@ int menu(void){
 		cout<<"   6. Regresar al inicio                   "<<endl;
 		cout<<"\n";
 		
-		opc = leer(true, "      OPCION -->", 1, 5);
+		opc = (int)leer(true, "      OPCION -->", 1, 6);   // antes (1, 5): la opcion 6 nunca pasaba
 		
 		return opc;
 	
 }
 
-int validarIdAutor(long long idAux, vector<autor> &autores, int n ){
-    for(int i=0; i<n; i++)
-    {
-        if(idAux == autores[i].idAutor)
-        { return 1; }
-    }
-    return 0;
-};
+//=============== AUXILIARES NUEVAS (usan tu leer) ===============//
 
-int validarIdPublicaciones(long long idAux, vector<publicacion> &publicaciones, int n ){
-    for(int i=0; i<n; i++)
-    {
-        if(idAux == publicaciones[i].idPubli)
-        { return 1; }
+// Pide UNA letra entre primera y ultima (acepta minusculas) y repite si no es valida.
+char leerLetra(const char mensaje[], char primera, char ultima){
+    char op[10];
+    while(true){
+        leer(false, mensaje, 0, 9, op);
+        if (cad_l(op) == 1){
+    	    char l = toupper((unsigned char)op[0]);
+    	    if(l >= primera && l <= ultima){
+    	        return l;
+    	    }	
+		}
+        
+        mostrar_error_en(mensaje, "Opcion invalida");
     }
-    return 0;
-};
+}
 
-int validarNombreAutor(char* nomAux, vector<autor> &autores, int n ){
-    for(int i=0; i<n; i++)
-    {
-        if((strcmp(nomAux, autores[i].nom) == 0))
-        { return 0; }
+// Muestra un menu numerado desde un arreglo de textos y devuelve la posicion elegida (0, 1, 2...).
+int elegirOpcion(const char encabezado[], const char opciones[][60], int cantidad){
+    cout << encabezado << endl;
+    for(int i = 0; i < cantidad; i++){
+        cout << "   " << i + 1 << ". " << opciones[i] << endl;
     }
-    return 1;
-};
+    return (int)leer(true, "   Opcion --> ", 1, cantidad) - 1;
+}
+
+static bool tieneArroba(const char t[]){
+    for(int i = 0; t[i] != '\0'; i++){
+        if(t[i] == '@'){
+            return true;
+        }
+    }
+    return false;
+}
+
+//=============== BUSQUEDAS / VALIDACIONES ===============//
+
+int buscarAutor(long long id, const vector<autor> &autores){
+    for(int i = 0; i < (int)autores.size(); i++){
+        if(autores[i].idAutor == id){
+            return i;
+        }
+    }
+    return -1;
+}
+
+bool existeIdPublicacion(long long id, const vector<publicacion> &publicaciones){
+    for(int i = 0; i < (int)publicaciones.size(); i++){
+        if(publicaciones[i].idPubli == id){
+            return true;
+        }
+    }
+    return false;
+}
+
+//=============== REGISTRO DE AUTORES ===============//
 
 void registrarAutores(vector<autor> &autores){
-    int n;
-    long long idAux;
-    cout<<"¿Cuántos autores desea registrar?";
-    if (!(cin >> n) || n < 0) {
-        cout << "Cantidad inválida." << endl;
-        return;
-    }
-    for(int i=0; i<n; i++){
-        do{
-            cout<<"Digite id del autor "<<i+1<<"que registrará: ";
-            if (!(cin >> idAux)) {
-            cout << "ID inválido." << endl;
-            return;
-    }
-        }while(validarIdAutor(idAux, autores, autores.size())!=0);
+    int n = (int)leer(true, "Cuantos autores desea registrar: ", 1, 100);
+    for(int i = 0; i < n; i++){
         autor nuevo{};
-        nuevo.idAutor = idAux;
-        cin.ignore();
-        cout<<"Digite nombre del autor "<<i+1<<"que registrará: ";cin.getline(nuevo.nom, 50);if (cin.fail()) break;
-        cout<<"Digite correo del autor "<<i+1<<"que registrará:  ";cin.getline(nuevo.email, 60);if (cin.fail()) break;
-        cout<<"¿A qué programa de la facultad pertenece el docente "<<i+1<<" que registrará? : ";cin.getline(nuevo.programa, 60);if (cin.fail()) break;
+        cout << endl << "--- AUTOR #" << i + 1 << " ---" << endl;
+
+        while(true){
+            long long id = (long long)leer(true, " - ID (documento): ", 1, MAX_ID);
+            if(buscarAutor(id, autores) == -1){
+                nuevo.idAutor = id;
+                break;
+            }
+            mostrar_error_en(" - ID (documento): ", "ID ya registrado");
+        }
+
+        leer(false, " - Nombre completo: ", 0, 49, nuevo.nom);
+
+        while(true){
+            leer(false, " - Correo: ", 0, 59, nuevo.email);
+            if(tieneArroba(nuevo.email)){
+                break;
+            }
+            mostrar_error_en(" - Correo: ", "Correo invalido (falta @)");
+        }
+
+        leer(false, " - Programa: ", 0, 59, nuevo.programa);
         autores.push_back(nuevo);
-    }   
-};
-
-void tipoPublicacion(publicacion &nueva, int &i){
-    int tipo;
-    bool c=true;
-    cout<<"¿Cuál es el tipo de la publicación "<<i+1<<"que registrará?: "<<endl;
-    cout<<"\t1. Publicación en revista internacional indexada."<<endl;
-    cout<<"\t2. Publicación en revista nacional.";
-    cout<<"\t3. Publicación en congreso internacional."<<endl;
-    cout<<"\t4. Publicación en congreso nacional."<<endl;
-    cout<<"\t5. Articulo en boletín o revista estudiantil."<<endl;
-    while (c){
-        cout<<"Ingrese número del tipo de la publicación: ";cin>>tipo;if (cin.fail()) break;
-        switch (tipo)
-        {
-        case 1:
-            strcpy(nueva.tipoP, "1. Publicación en revista internacional indexada.");
-            nueva.baseP+=10;
-            c=false;
-            break;
-        case 2:
-            strcpy(nueva.tipoP, "2. Publicación en revista nacional.");
-            nueva.baseP+=7;
-            c=false;
-            break;
-        case 3:
-            strcpy(nueva.tipoP, "3. Publicación en congreso internacional.");
-            nueva.baseP+=5;
-            c=false;
-            break;
-        case 4:
-            strcpy(nueva.tipoP, "4. Publicación en congreso nacional.");
-            nueva.baseP+=3;
-            c=false;
-            break;
-        case 5:
-            strcpy(nueva.tipoP, "5. Artículo en boletín o revista estudiantil.");
-            nueva.baseP+=1;
-            c=false;
-            break;
-        default:
-            cout<<"Invalido, intente de nuevo. ";
-            break;
-        }
     }
+    cout << endl << "Autores registrados en total: " << autores.size() << endl;
+    cout << "Presione una tecla para volver al menu ";
+    getch();
 }
 
-void premioPublicacion(publicacion &nueva, int &i){
-    int tipo;
-    bool c=true;
-    cout<<"Digite año de la publicación "<<i+1<<"que registrará: ";cin>>nueva.anio;if (cin.fail()) exit(0);
-    cout<<"¿Cuál es el tipo de de premio que recibió su publicación? "<<endl;
-    cout<<"\t1. Primer lugar o mejor ponencia internacional."<<endl;
-    cout<<"\t2. Segundo o tercer lugar en ponencia internacional.";
-    cout<<"\t3. Premio nacional o mención especial."<<endl;
-    cout<<"\t4. Sin premio o reconocimiento."<<endl;
-    while (c){
-        cout<<"Ingrese número del tipo de premio que recibió la publicación: ";cin>>tipo;if (cin.fail()) break;
-        switch (tipo)
-        {
-        case 1:
-            strcpy(nueva.premio, "1. Primer lugar o mejor ponencia internacional.");
-            nueva.adicP+=5;
-            c=false;
-            break;
-        case 2:
-            strcpy(nueva.premio,"2. Segundo o tercer lugar en ponencia internacional.");
-            nueva.adicP+=3;
-            c=false;
-            break;
-        case 3:
-            strcpy(nueva.premio,"3. Premio nacional o mención especial.");
-            nueva.adicP+=2;
-            c=false;
-            break;
-        case 4:
-            strcpy(nueva.premio,"4. Sin premio o reconocimiento.");
-            nueva.adicP+=0;
-            c=false;
-            break;
-        default:
-            cout<<"Invalido, intente de nuevo. ";
-            break;
-        }
-    }
+//=============== REGISTRO DE PUBLICACIONES ===============//
+
+// Elige el tipo y deja listos el texto y los puntos base (con "=", no "+=": sirve tambien al actualizar)
+void tipoPublicacion(publicacion &nueva){
+    int op = elegirOpcion("Tipo de publicacion:", TIPOS, 5);
+    cad_cpy(nueva.tipoP, TIPOS[op]);
+    nueva.baseP = PUNTOS_BASE[op];
 }
 
-void analizarTexto(publicacion &nueva){
-    char opc=-1;
-    while (opc != 'G' && opc != 'g') {
-        int contVoc = 0, contNum = 0,contBlank = 0, contSpecial = 0, contPalabra = 0;
-        cout<<"A. Mostrar cantidad total de caracteres."<<endl;
-        cout<<"B. Contar vocales."<<endl;
-        cout<<"C. Contar caracteres numéricos." <<endl;
-        cout<<"D. Contar espacios en blanco." <<endl;
-        cout<<"E. Contar caracteres especiales. "<<endl;
-        cout<<"F. Cantidad de palabras. "<<endl;
-        cout<<"G. Salir"<<endl;
-        cout<<"Ingrese su opción aquí";cin>>opc;
-        switch (opc)
-        {
-        case 'A':
-            cout<<"El tamaño de su abstract es de "<<strlen(nueva.abstract);
-            break;
-        case 'B':
-            for(int i=0;i<strlen(nueva.abstract);i++){
-                if(nueva.abstract[i]=='a'||nueva.abstract[i]=='e'||nueva.abstract[i]=='i'||nueva.abstract[i]=='o'||nueva.abstract[i]=='u'||nueva.abstract[i]=='A'||nueva.abstract[i]=='E'||nueva.abstract[i]=='I'||nueva.abstract[i]=='O'||nueva.abstract[i]=='U'){
-                    contVoc++;
-                }
-            }
-            cout << "Cantidad de vocales: " << contVoc << endl;
-            break;
-        case 'C':
-            for(int i=0; i<strlen(nueva.abstract);i++){
-                if (isdigit(static_cast<unsigned char>(nueva.abstract[i]))){
-                    contNum++;
-                }
-            }
-            cout << "Cantidad de números: " << contNum << endl;
-            break;
-        case 'D':
-            for(int i=0; i<strlen(nueva.abstract);i++){
-                    if (isspace(static_cast<unsigned char>(nueva.abstract[i]))){
-                        contBlank++;
-                    } 
-                }
-            cout << "Cantidad de espacios: " << contBlank << endl;
-            break;
-        case 'E':
-        for(int i=0; i<strlen(nueva.abstract);i++){
-                if (!isalnum(static_cast<unsigned char>(nueva.abstract[i]))){
-                    contSpecial++;
-                }
-                
-            }
-        cout << "Cantidad de caracteres especiales: " << contSpecial << endl;
-            break;
-        case 'F':{
-            bool palabra=false;
-            for(int i=0; i<strlen(nueva.abstract);i++){
-                    if(isspace(static_cast<unsigned char>(nueva.abstract[i]))){
-                        palabra=false;
-                    }else if(!palabra){
-                        palabra=true;
-                        contPalabra++;
-                    }
-            }
-            cout << "Cantidad de palabras: " << contPalabra << endl;
-            break;
-        }
-        case 'G':
-            opc='G';
-            break;
-        default:
-            break;
-        }
+// Elige el premio y deja listos el texto ("Ninguno" si no hay) y los puntos adicionales
+void premioPublicacion(publicacion &nueva){
+    int op = elegirOpcion("Premio o reconocimiento:", PREMIOS, 4);
+    if(op == 3){
+        cad_cpy(nueva.premio, "Ninguno");
+    }else{
+        cad_cpy(nueva.premio, PREMIOS[op]);
     }
+    nueva.adicP = PUNTOS_ADIC[op];
 }
 
-void editarAbstract(publicacion &nueva){
-    char opc;
-    cout<<"¿Desea editar el texto del abstract?"<<endl;
-    cout<<"Si (S)/No(N)";cin>>opc;
-    if (opc=='N'||opc=='n'){
-        cout<<"Ok";return;
-    }else if(opc=='S'||opc=='s'){
-        cout<<"\t\tMy WP-(Word Processor)"<<endl;
-        cout<<"¿Qué desea hacer?";
-        cout<<"\t1. Analizar texto"<<endl;
-        cout<<"\t2. Editar texto"<<endl;
-        cout<<"Ingrese aqui su opción: ";cin>>opc;
-        if(opc=='1'){
-            system("cls");
-            analizarTexto(nueva);
-        }else if(opc=='2'){
-
-        }else{
-            cout<<"Opcion inválida";exit(0);
-        }
-    }
+void mostrarPuntos(const publicacion &p){
+    cout << "   Puntos base:        " << p.baseP << endl;
+    cout << "   Puntos adicionales: " << p.adicP << endl;
+    cout << "   Total de puntos:    " << p.baseP + p.adicP << endl;
 }
 
 void registrarPublicaciones(vector<publicacion> &publicaciones, vector<autor> &autores){
-    if (autores.empty()) {
+    if(autores.empty()){
         cout << "Debe registrar al menos un autor primero." << endl;
+        cout << "Presione una tecla para volver al menu ";
+        getch();
         return;
     }
-    int n;
-    long long idAux;
-    cout<<"¿Cuántas publicaciones desea registrar?";
-    if (!(cin >> n) || n < 0) {
-        cout << "Cantidad inválida." << endl;
-        return;
-    }
-    for(int i=0; i<n; i++){
+
+    time_t ahora = time(0);
+    int anioActual = localtime(&ahora)->tm_year + 1900;
+
+    int n = (int)leer(true, "Cuantas publicaciones desea registrar: ", 1, 100);
+    for(int i = 0; i < n; i++){
         publicacion nueva{};
-        do{
-            cout<<"Digite id de la publicación "<<i+1<<"que registrará: ";
-            if (!(cin >> idAux)) {
-            cout << "ID inválido." << endl;
-            return;
-    }
-        }while(validarIdPublicaciones(idAux, publicaciones, publicaciones.size())!=0);
-        cin.ignore();
-        do{
-            cout<<"Digite autor de la publicación "<<i+1<<"que registrará: ";cin.getline(nueva.autor, 50);if (cin.fail()) break;
-        }while(validarNombreAutor(nueva.autor, autores, autores.size())!=0);
-        nueva.idPubli = idAux;
-        cout<<"Digite titulo de la publicación "<<i+1<<"que registrará: ";cin.getline(nueva.titulo,100);if (cin.fail()) break;
-        tipoPublicacion(nueva, i);
-        premioPublicacion(nueva, i);
-        cin.ignore();
-        cout<<"Digite abstract de la publicación "<<i+1<<"que registrará: ";cin.getline(nueva.abstract, 200);if (cin.fail()) break;
+        system("cls");
+        cout << "--- PUBLICACION #" << i + 1 << " ---" << endl;
+
+        // El autor debe existir. Se pide el ID y el nombre se copia solo.
+        int pos;
+        while(true){
+            long long idA = (long long)leer(true, " - ID del autor: ", 1, MAX_ID);
+            pos = buscarAutor(idA, autores);
+            if(pos != -1){
+                break;
+            }
+            mostrar_error_en(" - ID del autor: ", "Autor no registrado");
+        }
+        nueva.idAutor = autores[pos].idAutor;
+        cad_cpy(nueva.autor, autores[pos].nom);
+        cout << "   Autor: " << nueva.autor << endl;
+
+        // El ID de la publicacion no se puede repetir.
+        while(true){
+            long long idP = (long long)leer(true, " - ID de la publicacion: ", 1, MAX_ID);
+            if(!existeIdPublicacion(idP, publicaciones)){
+                nueva.idPubli = idP;
+                break;
+            }
+            mostrar_error_en(" - ID de la publicacion: ", "ID ya registrado");
+        }
+
+        leer(false, " - Titulo: ", 0, 99, nueva.titulo);
+        nueva.anio = (int)leer(true, " - Anio de publicacion: ", 1900, anioActual);
+        cout << endl;
+        tipoPublicacion(nueva);
+        cout << endl;
+        premioPublicacion(nueva);
+
+        cout << endl << "Puntos asignados:" << endl;
+        mostrarPuntos(nueva);
+        cout << endl;
+
+        leer(false, " - Abstract: ", 0, 499, nueva.abstract);
+        editarAbstract(nueva);
 
         publicaciones.push_back(nueva);
+
+        system("cls");
+        cout << "PUBLICACION REGISTRADA (" << i + 1 << " de " << n << ")" << endl;
+        cout << "   Titulo: " << nueva.titulo << endl;
+        cout << "   Autor:  " << nueva.autor << endl;
+        mostrarPuntos(nueva);
+        cout << endl << "Presione una tecla para continuar ";
+        getch();
     }
-        
+}
+
+//=============== EDITOR My WP ===============//
+
+void editarAbstract(publicacion &nueva){
+    int quiere = (int)leer(true, "Desea analizar o editar el abstract? (1=Si, 0=No): ", 0, 1);
+    if(quiere == 0){
+        return;
+    }
+    while(true){
+        system("cls");
+        cout << "=========== My WP (Word Processor) ===========" << endl;
+        cout << "   1. Analizar texto" << endl;
+        cout << "   2. Editar texto" << endl;
+        cout << "   3. Salir" << endl;
+        int op = (int)leer(true, "   Opcion --> ", 1, 3);
+        if(op == 1){
+            analizarTexto(nueva.abstract);
+        }else if(op == 2){
+            editarTexto(nueva.abstract);
+        }else{
+            return;
+        }
+    }
+}
+
+void analizarTexto(const char texto[]){
+    while(true){
+        system("cls");
+        cout << "=============== Analizar texto ===============" << endl;
+        cout << "Abstract: " << texto << endl << endl;
+        cout << "   A. Mostrar cantidad total de caracteres" << endl;
+        cout << "   B. Contar vocales" << endl;
+        cout << "   C. Contar caracteres numericos" << endl;
+        cout << "   D. Contar espacios en blanco" << endl;
+        cout << "   E. Contar caracteres especiales" << endl;
+        cout << "   F. Cantidad de palabras" << endl;
+        cout << "   G. Salir" << endl;
+        char op = leerLetra("   Opcion --> ", 'A', 'G');
+        if(op == 'G'){
+            return;
+        }
+        cout << endl;
+        switch(op){
+            case 'A': cout << "Total de caracteres: " << totalCaracteres(texto) << endl; break;
+            case 'B': cout << "Vocales: " << contarVocales(texto) << endl; break;
+            case 'C': cout << "Caracteres numericos: " << contarNumeros(texto) << endl; break;
+            case 'D': cout << "Espacios en blanco: " << contarEspacios(texto) << endl; break;
+            case 'E': cout << "Caracteres especiales: " << contarEspeciales(texto) << endl; break;
+            case 'F': cout << "Palabras: " << contarPalabras(texto) << endl; break;
+        }
+        cout << endl << "Presione una tecla para continuar ";
+        getch();
+    }
+}
+
+void editarTexto(char texto[]){
+    while(true){
+        system("cls");
+        cout << "================ Editar texto ================" << endl;
+        cout << "Abstract: " << texto << endl << endl;
+        cout << "   A. Convertir todo el texto a mayusculas" << endl;
+        cout << "   B. Convertir todo el texto a minusculas" << endl;
+        cout << "   C. Detectar tipo de oracion" << endl;
+        cout << "   D. Primera letra de cada palabra en mayuscula" << endl;
+        cout << "   E. Asignar color" << endl;
+        cout << "   F. Salir" << endl;
+        char op = leerLetra("   Opcion --> ", 'A', 'F');
+        if(op == 'F'){
+            return;
+        }
+        cout << endl;
+        switch(op){
+            case 'A':
+                aMayusculas(texto);
+                cout << "Listo: " << texto << endl;
+                break;
+            case 'B':
+                aMinusculas(texto);
+                cout << "Listo: " << texto << endl;
+                break;
+            case 'C': {
+                int decl, interr, excl;
+                tipoOracion(texto, decl, interr, excl);
+                cout << "Oraciones declarativas:   " << decl << endl;
+                cout << "Oraciones interrogativas: " << interr << endl;
+                cout << "Oraciones exclamativas:   " << excl << endl;
+                break;
+            }
+            case 'D':
+                primeraMayuscula(texto);
+                cout << "Listo: " << texto << endl;
+                break;
+            case 'E': {
+                int color = elegirOpcion("Color del texto:", COLORES, 7) + 1;
+                cout << endl;
+                asignarColor(texto, color);
+                break;
+            }
+        }
+        cout << endl << "Presione una tecla para continuar ";
+        getch();
+    }
+}
+
+//=============== PENDIENTES ===============//
+
+void actualizarDatos(vector<autor> &autores, vector<publicacion> &publicaciones){
+    cout << "En construccion..." << endl;
+    getch();
+}
+
+void reportes(const vector<autor> &autores, const vector<publicacion> &publicaciones){
+    cout << "En construccion..." << endl;
+    getch();
+}
+
+void estadisticas(const vector<autor> &autores, const vector<publicacion> &publicaciones){
+    cout << "En construccion..." << endl;
+    getch();
 }

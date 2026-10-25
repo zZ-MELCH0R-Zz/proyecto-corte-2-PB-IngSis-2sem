@@ -1,18 +1,19 @@
 #include "funciones.h"
-#include <windows.h>
 #include <conio.h>
-#include <iomanip>
+#include <windows.h>
 using namespace std;
-
-vector<autor> autores;
-vector<publicacion> publicaciones;
-
 
 //============ MAIN ==================//
 int main(){
-	system("");
+    system("");
+
+    vector<autor> autores;
+    vector<publicacion> publicaciones;
+    
+
+
+	int inicio=0;
 	int opcion=0;
-	int opcion_menu=0;
 	presentacion();
 	
 		do{
@@ -24,23 +25,22 @@ int main(){
 			cout<<"        [2] Creditos                       "<<endl;
 			cout<<"        [3] Salir                          "<<endl;
 			cout<<endl;
-			opcion = leer(true, "  OPCION --> ", 1, 3);
+			inicio = (int)leer(true, "  OPCION --> ", 1, 3);
 			
-			switch(opcion){
+			switch(inicio){
 				case 1: 
 								
-						do{
-							opcion_menu = menu();
-							system("cls");
-							switch(opcion_menu){
-								case 1: break;
-								case 2: break;
-								case 3: break;
-								case 4: break;
-								case 5: break;
+					do{
+						opcion = menu();
+						switch(opcion){
+	        	        	case 1: registrarAutores(autores); break;
+	            	    	case 2: registrarPublicaciones(publicaciones, autores); break;
+                    		case 3: actualizarDatos(autores, publicaciones); break;
+                    		case 4: reportes(autores, publicaciones); break;
+                    		case 5: estadisticas(autores, publicaciones); break;
 							}
 							
-						}while(opcion_menu != 6);
+					}while(opcion != 5);
 						
 				break;
 		
@@ -57,7 +57,7 @@ int main(){
 					cout<<"                                                    "<<endl;
 					cout<<"     (0222610008) ISABELA ORTEGA MARTIN             "<<endl;
 					cout<<"     (0222610012) JHON ENMANUEL PAYARES CASTRO      "<<endl;
-					cout<<"     (0222610014) ALAN PEREA ARAGóN                 "<<endl;
+					cout<<"     (0222610014) ALAN PEREA ARAGON                 "<<endl;
 					cout<<"     (0222420001) ANDRES TOBIAS PAYARES DUMAR       "<<endl;
 					cout<<"-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=--"<<endl;
 				
@@ -66,7 +66,7 @@ int main(){
 					getch(); 
 					continue; //Regresa al menú principal sin finalizar la ejecución total
 					
-				break;
+					break;
 				}
 			
 		}while(opcion != 3);
@@ -85,4 +85,3 @@ int main(){
 	return 0;
 }
 //============ MAIN ==================//
-
