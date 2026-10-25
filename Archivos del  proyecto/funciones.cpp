@@ -1,5 +1,6 @@
 #include "funciones.h"
 #include "MyString.h"
+#include "MyEditor.h"
 #include <ctype.h>
 #include <time.h>
 #include <windows.h>
@@ -276,6 +277,7 @@ bool existeIdPublicacion(long long id, const vector<publicacion> &publicaciones)
 //=============== REGISTRO DE AUTORES ===============//
 
 void registrarAutores(vector<autor> &autores){
+	
     int n = (int)leer(true, "Cuantos autores desea registrar: ", 1, 100);
     for(int i = 0; i < n; i++){
         autor nuevo{};
@@ -413,12 +415,15 @@ void editarAbstract(publicacion &nueva){
         cout << "=========== My WP (Word Processor) ===========" << endl;
         cout << "   1. Analizar texto" << endl;
         cout << "   2. Editar texto" << endl;
-        cout << "   3. Salir" << endl;
-        int op = (int)leer(true, "   Opcion --> ", 1, 3);
+        cout << "   3. Editor tipo nano (^X para salir)" << endl;
+        cout << "   4. Salir" << endl;
+        int op = (int)leer(true, "   Opcion --> ", 1, 4);
         if(op == 1){
             analizarTexto(nueva.abstract);
         }else if(op == 2){
             editarTexto(nueva.abstract);
+        }else if(op == 3){
+            editorNano(nueva.abstract, sizeof(nueva.abstract));
         }else{
             return;
         }

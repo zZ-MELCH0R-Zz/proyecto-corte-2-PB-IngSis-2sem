@@ -32,6 +32,7 @@ int main(){
 								
 					do{
 						opcion = menu();
+						system("cls");
 						switch(opcion){
 	        	        	case 1: registrarAutores(autores); break;
 	            	    	case 2: registrarPublicaciones(publicaciones, autores); break;

@@ -4,8 +4,8 @@
 CPP      = g++.exe
 CC       = gcc.exe
 WINDRES  = windres.exe
-OBJ      = funciones.o main.o MyString.o
-LINKOBJ  = funciones.o main.o MyString.o
+OBJ      = funciones.o main.o MyString.o MyEditor.o
+LINKOBJ  = funciones.o main.o MyString.o MyEditor.o
 LIBS     = -L"C:/Program Files (x86)/Dev-Cpp/MinGW64/lib" -L"C:/Program Files (x86)/Dev-Cpp/MinGW64/x86_64-w64-mingw32/lib" -static-libgcc -Wl,--allow-multiple-definition -finput-charset=UTF-8 -fexec-charset=UTF-8
 INCS     = -I"C:/Program Files (x86)/Dev-Cpp/MinGW64/include" -I"C:/Program Files (x86)/Dev-Cpp/MinGW64/x86_64-w64-mingw32/include" -I"C:/Program Files (x86)/Dev-Cpp/MinGW64/lib/gcc/x86_64-w64-mingw32/4.9.2/include"
 CXXINCS  = -I"C:/Program Files (x86)/Dev-Cpp/MinGW64/include" -I"C:/Program Files (x86)/Dev-Cpp/MinGW64/x86_64-w64-mingw32/include" -I"C:/Program Files (x86)/Dev-Cpp/MinGW64/lib/gcc/x86_64-w64-mingw32/4.9.2/include" -I"C:/Program Files (x86)/Dev-Cpp/MinGW64/lib/gcc/x86_64-w64-mingw32/4.9.2/include/c++"
@@ -32,3 +32,6 @@ main.o: main.cpp
 
 MyString.o: MyString.cpp
 	$(CPP) -c MyString.cpp -o MyString.o $(CXXFLAGS)
+
+MyEditor.o: MyEditor.cpp
+	$(CPP) -c MyEditor.cpp -o MyEditor.o $(CXXFLAGS)
