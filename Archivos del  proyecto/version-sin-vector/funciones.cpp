@@ -676,8 +676,19 @@ void actualizarDatos(autor autores[], int nAutores, publicacion publicaciones[],
 }
 
 
+void reportes(const autor autores[], int nAutores, const publicacion publicaciones[], int nPublicaciones) {
+    while(true) {
+        system("cls");
+        cout << "1. Consultar Autor\n";
+        cout << "2. Consultar una Publicacion\n";
+        cout << "3. Listado de Autores y sus Publicaciones\n";
+        cout << "4. Salir\n";
 
+        int opc = (int)leer(true, "   Opcion --> ", 1, 4);
 
+        if(opc == 4) {
+            break;
+        }
 
 void reportes(const autor autores[], int nAutores, const publicacion publicaciones[], int nPublicaciones){
     while(true){
