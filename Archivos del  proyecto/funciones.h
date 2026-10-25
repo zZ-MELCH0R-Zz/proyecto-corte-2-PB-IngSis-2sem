@@ -1,9 +1,14 @@
 #pragma once
 
 #include <iostream>
-#include <vector>
 #include <locale.h>
 using namespace std;
+
+//=================== CAPACIDADES =================//
+// Cuantos autores y publicaciones caben en el programa. Cambia estos numeros cuando quieras:
+// se usan en TODO el codigo, no hay que tocar nada mas.
+const int MAX_AUTORES = 100;
+const int MAX_PUBLICACIONES = 200;
 
 //=================== ESTRUCTURAS =================//
 struct autor {
@@ -16,7 +21,7 @@ struct autor {
 struct publicacion{
     long long idPubli;
     long long idAutor;   // NUEVO: enlaza la publicacion con su autor
-    char autor[50];      // nombre del autor (se copia solo desde el vector de autores)
+    char autor[50];      // nombre del autor (se copia solo desde el arreglo de autores)
     char titulo[100];
     char tipoP[100];
     int anio;
@@ -39,12 +44,12 @@ char leerLetra(const char mensaje[], char primera, char ultima);
 int elegirOpcion(const char encabezado[], const char opciones[][60], int cantidad);
 
 //=============== BUSQUEDAS / VALIDACIONES ==============//
-int buscarAutor(long long id, const vector<autor> &autores);   // devuelve la posicion o -1
-bool existeIdPublicacion(long long id, const vector<publicacion> &publicaciones);
+int buscarAutor(long long id, const autor autores[], int nAutores);   // devuelve la posicion o -1
+bool existeIdPublicacion(long long id, const publicacion publicaciones[], int nPublicaciones);
 
 //=============== REGISTRO ==============//
-void registrarAutores(vector<autor> &autores);
-void registrarPublicaciones(vector<publicacion> &publicaciones, vector<autor> &autores);
+void registrarAutores(autor autores[], int &nAutores);
+void registrarPublicaciones(publicacion publicaciones[], int &nPublicaciones, const autor autores[], int nAutores);
 void tipoPublicacion(publicacion &nueva);
 void premioPublicacion(publicacion &nueva);
 void mostrarPuntos(const publicacion &p);
@@ -55,8 +60,8 @@ void analizarTexto(const char texto[]);
 void editarTexto(char texto[]);
 
 //=============== PENDIENTES ==============//
-void actualizarDatos(vector<autor> &autores, vector<publicacion> &publicaciones);
-void reportes(const vector<autor> &autores, const vector<publicacion> &publicaciones);
-void estadisticas(const vector<autor> &autores, const vector<publicacion> &publicaciones);
+void actualizarDatos(autor autores[], int nAutores, publicacion publicaciones[], int nPublicaciones);
+void reportes(const autor autores[], int nAutores, const publicacion publicaciones[], int nPublicaciones);
+void estadisticas(const autor autores[], int nAutores, const publicacion publicaciones[], int nPublicaciones);
 
 

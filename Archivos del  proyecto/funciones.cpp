@@ -256,8 +256,8 @@ static bool tieneArroba(const char t[]){
 
 //=============== BUSQUEDAS / VALIDACIONES ===============//
 
-int buscarAutor(long long id, const vector<autor> &autores){
-    for(int i = 0; i < (int)autores.size(); i++){
+int buscarAutor(long long id, const autor autores[], int nAutores){
+    for(int i = 0; i < nAutores; i++){
         if(autores[i].idAutor == id){
             return i;
         }
@@ -265,8 +265,8 @@ int buscarAutor(long long id, const vector<autor> &autores){
     return -1;
 }
 
-bool existeIdPublicacion(long long id, const vector<publicacion> &publicaciones){
-    for(int i = 0; i < (int)publicaciones.size(); i++){
+bool existeIdPublicacion(long long id, const publicacion publicaciones[], int nPublicaciones){
+    for(int i = 0; i < nPublicaciones; i++){
         if(publicaciones[i].idPubli == id){
             return true;
         }
@@ -276,16 +276,23 @@ bool existeIdPublicacion(long long id, const vector<publicacion> &publicaciones)
 
 //=============== REGISTRO DE AUTORES ===============//
 
-void registrarAutores(vector<autor> &autores){
+void registrarAutores(autor autores[], int &nAutores){
+    int libres = MAX_AUTORES - nAutores;
+    if(libres == 0){
+        cout << "Capacidad llena: ya hay " << MAX_AUTORES << " autores registrados." << endl;
+        cout << "Presione una tecla para volver al menu ";
+        getch();
+        return;
+    }
 	
-    int n = (int)leer(true, "Cuantos autores desea registrar: ", 1, 100);
+    int n = (int)leer(true, "Cuantos autores desea registrar: ", 1, libres);
     for(int i = 0; i < n; i++){
         autor nuevo{};
         cout << endl << "--- AUTOR #" << i + 1 << " ---" << endl;
 
         while(true){
             long long id = (long long)leer(true, " - ID (documento): ", 1, MAX_ID);
-            if(buscarAutor(id, autores) == -1){
+            if(buscarAutor(id, autores, nAutores) == -1){
                 nuevo.idAutor = id;
                 break;
             }
@@ -303,9 +310,9 @@ void registrarAutores(vector<autor> &autores){
         }
 
         leer(false, " - Programa: ", 0, 59, nuevo.programa);
-        autores.push_back(nuevo);
+        autores[nAutores++] = nuevo;
     }
-    cout << endl << "Autores registrados en total: " << autores.size() << endl;
+    cout << endl << "Autores registrados en total: " << nAutores << endl;
     cout << "Presione una tecla para volver al menu ";
     getch();
 }
@@ -336,9 +343,17 @@ void mostrarPuntos(const publicacion &p){
     cout << "   Total de puntos:    " << p.baseP + p.adicP << endl;
 }
 
-void registrarPublicaciones(vector<publicacion> &publicaciones, vector<autor> &autores){
-    if(autores.empty()){
+void registrarPublicaciones(publicacion publicaciones[], int &nPublicaciones, const autor autores[], int nAutores){
+    if(nAutores == 0){
         cout << "Debe registrar al menos un autor primero." << endl;
+        cout << "Presione una tecla para volver al menu ";
+        getch();
+        return;
+    }
+
+    int libres = MAX_PUBLICACIONES - nPublicaciones;
+    if(libres == 0){
+        cout << "Capacidad llena: ya hay " << MAX_PUBLICACIONES << " publicaciones registradas." << endl;
         cout << "Presione una tecla para volver al menu ";
         getch();
         return;
@@ -347,7 +362,7 @@ void registrarPublicaciones(vector<publicacion> &publicaciones, vector<autor> &a
     time_t ahora = time(0);
     int anioActual = localtime(&ahora)->tm_year + 1900;
 
-    int n = (int)leer(true, "Cuantas publicaciones desea registrar: ", 1, 100);
+    int n = (int)leer(true, "Cuantas publicaciones desea registrar: ", 1, libres);
     for(int i = 0; i < n; i++){
         publicacion nueva{};
         system("cls");
@@ -357,7 +372,7 @@ void registrarPublicaciones(vector<publicacion> &publicaciones, vector<autor> &a
         int pos;
         while(true){
             long long idA = (long long)leer(true, " - ID del autor: ", 1, MAX_ID);
-            pos = buscarAutor(idA, autores);
+            pos = buscarAutor(idA, autores, nAutores);
             if(pos != -1){
                 break;
             }
@@ -370,7 +385,7 @@ void registrarPublicaciones(vector<publicacion> &publicaciones, vector<autor> &a
         // El ID de la publicacion no se puede repetir.
         while(true){
             long long idP = (long long)leer(true, " - ID de la publicacion: ", 1, MAX_ID);
-            if(!existeIdPublicacion(idP, publicaciones)){
+            if(!existeIdPublicacion(idP, publicaciones, nPublicaciones)){
                 nueva.idPubli = idP;
                 break;
             }
@@ -391,7 +406,7 @@ void registrarPublicaciones(vector<publicacion> &publicaciones, vector<autor> &a
         leer(false, " - Abstract: ", 0, 499, nueva.abstract);
         editarAbstract(nueva);
 
-        publicaciones.push_back(nueva);
+        publicaciones[nPublicaciones++] = nueva;
 
         system("cls");
         cout << "PUBLICACION REGISTRADA (" << i + 1 << " de " << n << ")" << endl;
@@ -511,17 +526,17 @@ void editarTexto(char texto[]){
 
 //=============== PENDIENTES ===============//
 
-void actualizarDatos(vector<autor> &autores, vector<publicacion> &publicaciones){
+void actualizarDatos(autor autores[], int nAutores, publicacion publicaciones[], int nPublicaciones){
     cout << "En construccion..." << endl;
     getch();
 }
 
-void reportes(const vector<autor> &autores, const vector<publicacion> &publicaciones){
+void reportes(const autor autores[], int nAutores, const publicacion publicaciones[], int nPublicaciones){
     cout << "En construccion..." << endl;
     getch();
 }
 
-void estadisticas(const vector<autor> &autores, const vector<publicacion> &publicaciones){
+void estadisticas(const autor autores[], int nAutores, const publicacion publicaciones[], int nPublicaciones){
     cout << "En construccion..." << endl;
     getch();
 }

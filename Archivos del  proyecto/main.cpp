@@ -7,8 +7,11 @@ using namespace std;
 int main(){
     system("");
 
-    vector<autor> autores;
-    vector<publicacion> publicaciones;
+    // static: los arreglos viven fuera de la pila, asi puedes subir los maximos sin problema
+    static autor autores[MAX_AUTORES];
+    int nAutores = 0;
+    static publicacion publicaciones[MAX_PUBLICACIONES];
+    int nPublicaciones = 0;
     
 
 
@@ -34,11 +37,11 @@ int main(){
 						opcion = menu();
 						system("cls");
 						switch(opcion){
-	        	        	case 1: registrarAutores(autores); break;
-	            	    	case 2: registrarPublicaciones(publicaciones, autores); break;
-                    		case 3: actualizarDatos(autores, publicaciones); break;
-                    		case 4: reportes(autores, publicaciones); break;
-                    		case 5: estadisticas(autores, publicaciones); break;
+	        	        	case 1: registrarAutores(autores, nAutores); break;
+	            	    	case 2: registrarPublicaciones(publicaciones, nPublicaciones, autores, nAutores); break;
+                    		case 3: actualizarDatos(autores, nAutores, publicaciones, nPublicaciones); break;
+                    		case 4: reportes(autores, nAutores, publicaciones, nPublicaciones); break;
+                    		case 5: estadisticas(autores, nAutores, publicaciones, nPublicaciones); break;
 							}
 							
 					}while(opcion != 6);
