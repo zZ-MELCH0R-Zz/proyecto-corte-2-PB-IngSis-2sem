@@ -41,7 +41,7 @@ int main(){
                     		case 5: estadisticas(autores, publicaciones); break;
 							}
 							
-					}while(opcion != 6);
+					}while(opcion != 5);
 						
 				break;
 		

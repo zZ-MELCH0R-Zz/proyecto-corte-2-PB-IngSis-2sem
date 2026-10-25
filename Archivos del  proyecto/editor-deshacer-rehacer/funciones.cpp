@@ -11,7 +11,7 @@ using namespace std;
 const double MAX_ID = 9999999999.0;   // documento de hasta 10 digitos
 
 //=============== TABLAS DE TIPOS Y PREMIOS ===============//
-
+// Un solo lugar con los textos y los puntos: se acabaron los switch repetidos.
 static const char TIPOS[5][60] = {
     "Publicacion en revista internacional indexada",
     "Publicacion en revista nacional",
@@ -218,7 +218,7 @@ int menu(void){
 	
 }
 
-//=============== AUXILIARES ===============//
+//=============== AUXILIARES NUEVAS (usan tu leer) ===============//
 
 // Pide UNA letra entre primera y ultima (acepta minusculas) y repite si no es valida.
 char leerLetra(const char mensaje[], char primera, char ultima){
