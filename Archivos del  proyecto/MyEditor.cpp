@@ -6,10 +6,11 @@
 using namespace std;
 
 /*
-  COMO FUNCIONA (la idea completa):
+  ------| COMO FUNCIONA |------
+  
   1. El texto vive en UN solo arreglo de char, con '\n' como separador de lineas.
-  2. El cursor es un numero: la posicion (indice) dentro de ese arreglo.
-  3. De ese indice se calculan todo lo demas: en que linea y columna esta,
+  2. El cursor es un numero: la posicion es un indice dentro de ese arreglo.
+  3. De ese indice se calculan todo lo demas, como en que linea y columna esta,
      donde empieza y termina su linea, etc. Nada se guarda duplicado.
   4. Insertar/borrar = desplazar los caracteres de la cola una posicion.
   5. Cada vuelta: ajustar la vista (scroll), dibujar el cuadro completo con
