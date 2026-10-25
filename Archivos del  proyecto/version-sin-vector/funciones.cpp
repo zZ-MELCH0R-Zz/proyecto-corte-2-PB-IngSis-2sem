@@ -649,14 +649,14 @@ void actualizarDatos(autor autores[], int nAutores, publicacion publicaciones[],
                     if(campo == 1){
                         leer(false, "Ingrese nuevo titulo: ", 0, 99, publicaciones[pos].titulo);
                     }else if(campo == 2){
-                        tipoPublicacion(publicaciones[pos]); // Recalcula puntos base autom·ticamente[cite: 3, 4]
+                        tipoPublicacion(publicaciones[pos]); // Recalcula puntos base autom√°ticamente[cite: 3, 4]
                         cout << "\nPuntos base recalculados con exito.\n";
                     }else if(campo == 3){
                         time_t ahora = time(0);
                         int anioActual = localtime(&ahora)->tm_year + 1900;
                         publicaciones[pos].anio = (int)leer(true, "Ingrese nuevo ano: ", 1900, anioActual);
                     }else if(campo == 4){
-                        premioPublicacion(publicaciones[pos]); // Recalcula puntos adicionales autom·ticamente[cite: 3, 4]
+                        premioPublicacion(publicaciones[pos]); // Recalcula puntos adicionales autom√°ticamente[cite: 3, 4]
                         cout << "\nPuntos adicionales recalculados con exito.\n";
                     }else if(campo == 5){
                         leer(false, "Ingrese nuevo abstract: ", 0, 499, publicaciones[pos].abstract);
@@ -690,8 +690,23 @@ void reportes(const autor autores[], int nAutores, const publicacion publicacion
             break;
         }
 
-        if(opc == 1) {
-            if(nAutores == 0) {
+void reportes(const autor autores[], int nAutores, const publicacion publicaciones[], int nPublicaciones){
+    while(true){
+        system("cls");
+        cout << "1. Consultar Autor\n";
+        cout << "2. Consultar una Publicacion\n";
+        cout << "3. Listado de Autores y sus Publicaciones\n";
+        cout << "4. Salir\n";
+
+        // El menu muestra cuatro opciones, por eso el rango debe llegar hasta 4.
+        int opc = (int)leer(true, "   Opcion --> ", 1, 4);
+
+        if(opc == 4){
+            break;
+        }
+
+        if(opc == 1){
+            if(nAutores == 0){
                 cout << "\nNo hay autores registrados.\n";
                 cout << "Presione una tecla para volver al menu...";
                 getch();
@@ -699,10 +714,9 @@ void reportes(const autor autores[], int nAutores, const publicacion publicacion
             }
 
             long long id = (long long)leer(true, "Ingrese el ID del autor: ", 1, MAX_ID);
-
             int pos = buscarAutor(id, autores, nAutores);
 
-            if(pos == -1) {
+            if(pos == -1){
                 cout << "\nAutor no encontrado.\n";
                 cout << "Presione una tecla para volver al menu...";
                 getch();
@@ -714,119 +728,115 @@ void reportes(const autor autores[], int nAutores, const publicacion publicacion
             cout << "Nombre:   " << autores[pos].nom << endl;
             cout << "Correo:   " << autores[pos].email << endl;
             cout << "Programa: " << autores[pos].programa << endl;
-
             cout << "\n=== PUBLICACIONES DEL AUTOR ===\n";
 
             bool tienePublicaciones = false;
-
-            for(int i = 0; i < nPublicaciones; i++) {
-				if(publicaciones[i].idAutor == autores[pos].idAutor) {
-				    tienePublicaciones = true;
-
+            for(int i = 0; i < nPublicaciones; i++){
+                // La publicacion se relaciona con el autor mediante idAutor.
+                if(publicaciones[i].idAutor == autores[pos].idAutor){
+                    tienePublicaciones = true;
                     cout << "\n----------------------------------------\n";
-                    cout << "ID de publicacion: "<< publicaciones[i].idPubli << endl;
-                    cout << "Titulo:            "<< publicaciones[i].titulo << endl;
-                    cout << "Tipo:              "<< publicaciones[i].tipoP << endl;
-                    cout << "Anio:               "<< publicaciones[i].anio << endl;
-                    cout << "Premio:            "<< publicaciones[i].premio << endl;
-                    cout << "Puntaje base:      "<< publicaciones[i].baseP << endl;
-                    cout << "Puntaje adicional: "<< publicaciones[i].adicP << endl;
-                    cout << "Puntaje total:     "<< publicaciones[i].baseP + publicaciones[i].adicP << endl;
+                    cout << "ID de publicacion: " << publicaciones[i].idPubli << endl;
+                    cout << "Titulo:            " << publicaciones[i].titulo << endl;
+                    cout << "Tipo:              " << publicaciones[i].tipoP << endl;
+                    cout << "Ano:               " << publicaciones[i].anio << endl;
+                    cout << "Premio:            " << publicaciones[i].premio << endl;
+                    cout << "Puntaje base:      " << publicaciones[i].baseP << endl;
+                    cout << "Puntaje adicional: " << publicaciones[i].adicP << endl;
+                    cout << "Puntaje total:     "
+                         << publicaciones[i].baseP + publicaciones[i].adicP << endl;
                 }
             }
 
-            if(!tienePublicaciones) {
+            if(!tienePublicaciones){
                 cout << "Este autor no tiene publicaciones registradas.\n";
             }
 
             cout << "\nPresione una tecla para volver al menu...";
             getch();
         }
-        else if(opc == 2) {
-            if(nPublicaciones == 0) {
+        else if(opc == 2){
+            if(nPublicaciones == 0){
                 cout << "\nNo hay publicaciones registradas.\n";
                 cout << "Presione una tecla para volver al menu...";
                 getch();
                 continue;
             }
 
-            long long id = (long long)leer(
-                true, "Ingrese el ID de la publicacion: ", 1, MAX_ID
-            );
-
+            long long id = (long long)leer(true, "Ingrese el ID de la publicacion: ", 1, MAX_ID);
             int pos = -1;
 
-            // Buscar por ID de publicacion.
-            for(int i = 0; i < nPublicaciones; i++) {
-                if(publicaciones[i].idPubli == id) {
+            // Se busca por idPubli, no por el ID del autor.
+            for(int i = 0; i < nPublicaciones; i++){
+                if(publicaciones[i].idPubli == id){
                     pos = i;
                     break;
                 }
             }
 
-            if(pos == -1) {
+            if(pos == -1){
                 cout << "\nPublicacion no encontrada.\n";
             }
-            else {
-                int posAutor = buscarAutor(
-                    publicaciones[pos].idAutor, autores, nAutores
-                );
+            else{
+                int posAutor = buscarAutor(publicaciones[pos].idAutor, autores, nAutores);
 
                 cout << "\n=== DATOS DE LA PUBLICACION ===\n";
-                cout << "ID de publicacion: "<< publicaciones[pos].idPubli << endl;
+                cout << "ID de publicacion: " << publicaciones[pos].idPubli << endl;
 
-                if(posAutor != -1) {
-                    cout << "Autor:             "<< autores[posAutor].nom << endl;
-                    cout << "Programa:          "<< autores[posAutor].programa << endl;
-                }else {
-                    cout << "Autor:             "<< publicaciones[pos].autor << endl;
+                if(posAutor != -1){
+                    cout << "Autor:             " << autores[posAutor].nom << endl;
+                    cout << "Programa:          " << autores[posAutor].programa << endl;
+                }
+                else{
+                    // Respaldo por si el autor asociado ya no figura en el arreglo.
+                    cout << "Autor:             " << publicaciones[pos].autor << endl;
                 }
 
-                cout << "ID del autor:      "<< publicaciones[pos].idAutor << endl;
-                cout << "Titulo:            "<< publicaciones[pos].titulo << endl;
-                cout << "Tipo:              "<< publicaciones[pos].tipoP << endl;
-                cout << "Anio:              "<< publicaciones[pos].anio << endl;
-                cout << "Premio:            "<< publicaciones[pos].premio << endl;
-                cout << "Puntaje base:      "<< publicaciones[pos].baseP << endl;
-                cout << "Puntaje adicional: "<< publicaciones[pos].adicP << endl;
-                cout << "Puntaje total:     "<< publicaciones[pos].baseP + publicaciones[pos].adicP << endl;
-                cout << "Resumen:           "<< publicaciones[pos].abstract << endl;
+                cout << "ID del autor:      " << publicaciones[pos].idAutor << endl;
+                cout << "Titulo:            " << publicaciones[pos].titulo << endl;
+                cout << "Tipo:              " << publicaciones[pos].tipoP << endl;
+                cout << "Ano:               " << publicaciones[pos].anio << endl;
+                cout << "Premio:            " << publicaciones[pos].premio << endl;
+                cout << "Puntaje base:      " << publicaciones[pos].baseP << endl;
+                cout << "Puntaje adicional: " << publicaciones[pos].adicP << endl;
+                cout << "Puntaje total:     "
+                     << publicaciones[pos].baseP + publicaciones[pos].adicP << endl;
+                cout << "Resumen:           " << publicaciones[pos].abstract << endl;
             }
 
             cout << "\nPresione una tecla para volver al menu...";
             getch();
         }
-        else if(opc == 3) {
+        else if(opc == 3){
             cout << "\n=== LISTADO GENERAL DE AUTORES Y PUBLICACIONES ===\n";
 
-            if(nAutores == 0) {
+            if(nAutores == 0){
                 cout << "No hay autores registrados.\n";
             }
-            else {
-                for(int a = 0; a < nAutores; a++) {
+            else{
+                for(int a = 0; a < nAutores; a++){
                     cout << "\n========================================\n";
-                    cout << "Autor:    " << autores[a].nom << endl;
-                    cout << "ID:       " << autores[a].idAutor << endl;
-                    cout << "Programa: " << autores[a].programa << endl;
+                    cout << "Autor:   " << autores[a].nom << endl;
+                    cout << "ID:      " << autores[a].idAutor << endl;
+                    cout << "Programa:" << autores[a].programa << endl;
 
                     bool tienePublicaciones = false;
-
-                    for(int p = 0; p < nPublicaciones; p++) {
-                        if(publicaciones[p].idAutor == autores[a].idAutor) {
+                    for(int p = 0; p < nPublicaciones; p++){
+                        if(publicaciones[p].idAutor == autores[a].idAutor){
                             tienePublicaciones = true;
-
-                            cout << "\n  Publicacion:       "<< publicaciones[p].titulo << endl;
-                            cout << "  ID de publicacion: "<< publicaciones[p].idPubli << endl;
-                            cout << "  Tipo:              "<< publicaciones[p].tipoP << endl;
-                            cout << "  Anio:               "<< publicaciones[p].anio << endl;
-                            cout << "  Premio:            "<< publicaciones[p].premio << endl;
-                            cout << "  Puntaje base:      "<< publicaciones[p].baseP << endl;
-                            cout << "  Puntaje adicional: "<< publicaciones[p].adicP << endl;
-                            cout << "  Puntaje total:     "<< publicaciones[p].baseP+ publicaciones[p].adicP << endl;
+                            cout << "\n  Publicacion:       " << publicaciones[p].titulo << endl;
+                            cout << "  ID de publicacion: " << publicaciones[p].idPubli << endl;
+                            cout << "  Tipo:              " << publicaciones[p].tipoP << endl;
+                            cout << "  Ano:               " << publicaciones[p].anio << endl;
+                            cout << "  Premio:            " << publicaciones[p].premio << endl;
+                            cout << "  Puntaje base:      " << publicaciones[p].baseP << endl;
+                            cout << "  Puntaje adicional: " << publicaciones[p].adicP << endl;
+                            cout << "  Puntaje total:     "
+                                 << publicaciones[p].baseP + publicaciones[p].adicP << endl;
                         }
                     }
 
-                    if(!tienePublicaciones) {
+                    if(!tienePublicaciones){
                         cout << "  Sin publicaciones registradas.\n";
                     }
                 }
@@ -837,7 +847,6 @@ void reportes(const autor autores[], int nAutores, const publicacion publicacion
         }
     }
 }
-
 
 void estadisticas(const autor autores[], int nAutores, const publicacion publicaciones[], int nPublicaciones){
     cout << "En construccion..." << endl;
