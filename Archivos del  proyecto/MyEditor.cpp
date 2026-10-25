@@ -36,9 +36,9 @@ struct Editor{
     char msg[120];           // mensaje de la barra de estado
 };
 
-static const char ATAJO_TECLA[10][4] = {"^G","^O","^W","^K","^Y","^X","^U","^A","^E","^V"};
-static const char ATAJO_TEXTO[10][12] = {"Ayuda","Guardar","Buscar","Cortar","Pag Ant",
-                                         "Salir","Pegar","Inicio","Fin","Pag Sig"};
+static const char ATAJO_TECLA[12][4] = {"^G","^O","^W","^K","^U","^X","^Z","^R","^A","^E","^P","^N"};
+static const char ATAJO_TEXTO[12][12] = {"Ayuda","Guardar","Buscar","Cortar","Pegar","Salir",
+                                         "Deshacer","Rehacer","Inicio","Fin","Pag Ant","Pag Sig"};
 
 //=============== UTILIDADES DE TEXTO ===============//
 static void cad_cat(char destino[], const char origen[]){
@@ -66,6 +66,62 @@ static bool iguales(const char a[], const char b[]){
 
 static void avisar(Editor &e, const char s[]){
     cad_cpy(e.msg, s);
+}
+
+//=============== HISTORIAL: deshacer (^Z) y rehacer (^R) ===============//
+// Se guardan "fotos" del texto antes de cada edicion; deshacer vuelve a la foto anterior.
+// Letras seguidas (o borrados seguidos) cuentan como UNA sola edicion.
+static const int MAX_HIST = 30;
+struct Snap{
+    char t[MAX_TXT];
+    int cur;
+};
+static Snap histU[MAX_HIST];  static int nU = 0;   // pila de deshacer
+static Snap histR[MAX_HIST];  static int nR = 0;   // pila de rehacer
+static Snap previa;                                 // texto antes de procesar la tecla actual
+static Snap tmp;
+
+static void tomarSnap(Snap &s, const Editor &e){
+    cad_cpy(s.t, e.t);
+    s.cur = e.cur;
+}
+
+static void apilar(Snap pila[], int &n, const Snap &s){
+    if(n == MAX_HIST){                              // llena: se descarta la mas vieja
+        for(int i = 1; i < n; i++){
+            cad_cpy(pila[i-1].t, pila[i].t);
+            pila[i-1].cur = pila[i].cur;
+        }
+        n--;
+    }
+    cad_cpy(pila[n].t, s.t);
+    pila[n].cur = s.cur;
+    n++;
+}
+
+static void restaurar(Editor &e, const Snap &s){
+    cad_cpy(e.t, s.t);
+    e.len = cad_l(e.t);
+    e.cur = (s.cur < e.len) ? s.cur : e.len;
+    e.modificado = !iguales(e.t, e.guardado);       // si vuelve a lo guardado, ya no esta "Modificado"
+}
+
+static void deshacer(Editor &e){
+    if(nU == 0){ avisar(e, "Nada que deshacer"); return; }
+    tomarSnap(tmp, e);
+    apilar(histR, nR, tmp);
+    nU--;
+    restaurar(e, histU[nU]);
+    avisar(e, "Deshecho");
+}
+
+static void rehacer(Editor &e){
+    if(nR == 0){ avisar(e, "Nada que rehacer"); return; }
+    tomarSnap(tmp, e);
+    apilar(histU, nU, tmp);
+    nR--;
+    restaurar(e, histR[nR]);
+    avisar(e, "Rehecho");
 }
 
 //=============== BUFFER DEL CUADRO (se dibuja todo de una vez) ===============//
@@ -176,12 +232,12 @@ static void cortarLinea(Editor &e, bool seguido){
     if(e.t[fin] == '\n'){ fin++; }                // la linea incluye su salto
     int n = fin - ini;
     if(n == 0){ avisar(e, "Nada que cortar"); return; }
-    if(!seguido){ e.lenPorta = 0; }               // varios Ctrl+K seguidos se acumulan
-    if(e.lenPorta + n < MAX_TXT){
-        for(int i = 0; i < n; i++){ e.porta[e.lenPorta + i] = e.t[ini + i]; }
-        e.lenPorta += n;
-        e.porta[e.lenPorta] = '\0';
-    }
+    int base = seguido ? e.lenPorta : 0;          // varios Ctrl+K seguidos se acumulan
+    if(base + n >= MAX_TXT){ avisar(e, "Portapapeles lleno"); return; }   // no borra lo que no pudo guardar
+    e.lenPorta = base;
+    for(int i = 0; i < n; i++){ e.porta[e.lenPorta + i] = e.t[ini + i]; }
+    e.lenPorta += n;
+    e.porta[e.lenPorta] = '\0';
     borrarRango(e, ini, fin);
     e.cur = ini;
 }
@@ -293,11 +349,11 @@ static void dibujar(const Editor &e){
     }
 
     // --- barras de atajos (2 filas x 5 columnas) ---
-    int celda = ANCHO / 5;
+    int celda = ANCHO / 6;
     for(int f = 0; f < 2; f++){
         irA(ALTO - 1 + f, 1);
-        for(int c = 0; c < 5; c++){
-            int i = f * 5 + c;
+        for(int c = 0; c < 6; c++){
+            int i = f * 6 + c;
             ponerTexto("\033[7m"); ponerTexto(ATAJO_TECLA[i]); ponerTexto("\033[0m ");
             ponerTexto(ATAJO_TEXTO[i]);
             for(int u = 3 + cad_l(ATAJO_TEXTO[i]); u < celda; u++){ ponerCar(' '); }
@@ -382,13 +438,14 @@ static void mostrarAyuda(){
     cout << "  AYUDA DEL EDITOR (estilo nano)\n\n";
     cout << "  Flechas ............ mover el cursor\n";
     cout << "  Inicio / Fin ....... principio / final de la linea   (tambien ^A / ^E)\n";
-    cout << "  Re Pag / Av Pag .... una pantalla arriba / abajo     (tambien ^Y / ^V)\n";
+    cout << "  Re Pag / Av Pag .... una pantalla arriba / abajo     (tambien ^P / ^N)\n";
     cout << "  Ctrl + flechas ..... saltar de palabra en palabra\n";
     cout << "  Ctrl + Inicio/Fin .. principio / final del texto\n";
     cout << "  Retroceso / Supr ... borrar a la izquierda / a la derecha\n";
     cout << "  Enter .............. nueva linea\n";
     cout << "  ^K ................. cortar la linea (varios seguidos se acumulan)\n";
     cout << "  ^U ................. pegar lo cortado\n";
+    cout << "  ^Z / ^R ............ deshacer / rehacer\n";
     cout << "  ^W ................. buscar (Enter vacio repite la ultima busqueda)\n";
     cout << "  ^O ................. guardar\n";
     cout << "  ^X ................. salir (pregunta si hay cambios sin guardar)\n";
@@ -436,10 +493,16 @@ bool editorNano(char texto[], int tam){
 
     bool corteAnterior = false;                        // la tecla anterior fue Ctrl+K
     bool seguir = true;
+    int tipoAnterior = 0;                              // tipo de la ultima edicion (para agrupar letras)
+    nU = 0;
+    nR = 0;
 
     cout << "\033[?1049h";                             // pantalla alterna: al salir, la consola queda como estaba
 
     while(seguir){
+        int anchoAntes = ANCHO, altoAntes = ALTO;
+        medirConsola();                                // por si cambiaron el tamano de la ventana
+        if(anchoAntes != ANCHO || altoAntes != ALTO){ cout << "\033[2J"; }
         ajustarVista(e);
         dibujar(e);
         e.msg[0] = '\0';
@@ -447,6 +510,9 @@ bool editorNano(char texto[], int tam){
         int k = getch();
         bool vertical = false;                         // para conservar la columna deseada
         bool esCorte = false;
+        bool esHistorial = false;                      // la tecla fue ^Z o ^R
+        int tipoEdicion = 0;                           // 1 = letra, 2 = Retroceso, 3 = Supr, 0 = otra
+        tomarSnap(previa, e);                          // foto del texto antes de la tecla
 
         if(k == 0 || k == 224){                        // teclas especiales: llegan en dos partes
             int k2 = getch();
@@ -459,7 +525,7 @@ bool editorNano(char texto[], int tam){
                 case 79: e.cur = finLinea(e, e.cur); break;                // Fin
                 case 73: paginaArriba(e); vertical = true; break;          // Re Pag
                 case 81: paginaAbajo(e); vertical = true; break;           // Av Pag
-                case 83: if(e.cur < e.len){ borrarRango(e, e.cur, e.cur + 1); } break;   // Supr
+                case 83: if(e.cur < e.len){ borrarRango(e, e.cur, e.cur + 1); } tipoEdicion = 3; break;   // Supr
                 case 115: palabraAnterior(e); break;                       // Ctrl + izquierda
                 case 116: palabraSiguiente(e); break;                      // Ctrl + derecha
                 case 119: e.cur = 0; break;                                // Ctrl + Inicio
@@ -482,6 +548,8 @@ bool editorNano(char texto[], int tam){
                         }
                     }
                     break;
+                case 26: deshacer(e); esHistorial = true; break;           // ^Z
+                case 18: rehacer(e); esHistorial = true; break;            // ^R
                 case 15: guardar(e); break;                                // ^O
                 case 11: cortarLinea(e, corteAnterior); esCorte = true; break;   // ^K
                 case 21: pegar(e); break;                                  // ^U
@@ -489,13 +557,16 @@ bool editorNano(char texto[], int tam){
                 case 7:  mostrarAyuda(); break;                            // ^G
                 case 1:  e.cur = inicioLinea(e, e.cur); break;             // ^A
                 case 5:  e.cur = finLinea(e, e.cur); break;                // ^E
-                case 25: paginaArriba(e); vertical = true; break;          // ^Y
-                case 22: paginaAbajo(e); vertical = true; break;           // ^V
+                case 16:
+                case 25: paginaArriba(e); vertical = true; break;          // ^P (o ^Y)
+                case 14:
+                case 22: paginaAbajo(e); vertical = true; break;           // ^N (o ^V)
                 case 8:                                                    // Retroceso
                     if(e.cur > 0){
                         borrarRango(e, e.cur - 1, e.cur);
                         e.cur--;
                     }
+                    tipoEdicion = 2;
                     break;
                 case 13:
                 case 10:                                                   // Enter
@@ -508,10 +579,22 @@ bool editorNano(char texto[], int tam){
                     break;
                 default:
                     if(k >= 32 && k != 127){                               // caracter normal
+                        tipoEdicion = 1;
                         if(!insertarCar(e, (char)k)){ avisar(e, "Texto lleno"); }
                     }
                     break;
             }
+        }
+
+        // historial: si el texto cambio, guarda la foto de antes (salvo que sea la misma tanda de letras)
+        if(esHistorial){
+            tipoAnterior = 0;
+        }else if(iguales(e.t, previa.t)){
+            tipoAnterior = 0;
+        }else{
+            if(tipoEdicion == 0 || tipoEdicion != tipoAnterior){ apilar(histU, nU, previa); }
+            nR = 0;                                    // una edicion nueva invalida lo "rehacible"
+            tipoAnterior = tipoEdicion;
         }
 
         if(!vertical){ e.colMeta = e.cur - inicioLinea(e, e.cur); }
