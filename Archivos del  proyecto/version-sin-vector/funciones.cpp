@@ -676,81 +676,169 @@ void actualizarDatos(autor autores[], int nAutores, publicacion publicaciones[],
 }
 
 
+void reportes(const autor autores[], int nAutores, const publicacion publicaciones[], int nPublicaciones) {
+    while(true) {
+        system("cls");
+        cout << "1. Consultar Autor\n";
+        cout << "2. Consultar una Publicacion\n";
+        cout << "3. Listado de Autores y sus Publicaciones\n";
+        cout << "4. Salir\n";
 
+        int opc = (int)leer(true, "   Opcion --> ", 1, 4);
 
+        if(opc == 4) {
+            break;
+        }
 
-void reportes(const autor autores[], int nAutores, const publicacion publicaciones[], int nPublicaciones){
-    while(true){
-    	system("cls");
-		cout<<"1. Consultar Autor\n";
-		cout<<"2. Consultar una Publicacion\n";
-		cout<<"3. Listado de Autores y sus Publicaciones\n";
-		cout<<"4. Salir\n";
-		int opc = (int)leer(true, "   Opcion --> ", 1, 3);
-		if(opc == 1){
-			long long id = (long long)leer(true, "Ingrese el ID del autor: ", 1, MAX_ID);
+        if(opc == 1) {
+            if(nAutores == 0) {
+                cout << "\nNo hay autores registrados.\n";
+                cout << "Presione una tecla para volver al menu...";
+                getch();
+                continue;
+            }
+
+            long long id = (long long)leer(true, "Ingrese el ID del autor: ", 1, MAX_ID);
+
             int pos = buscarAutor(id, autores, nAutores);
 
-            if(pos != -1){
-            	cout<<"Publicaciones: "<<endl;
-				cout<<"Titulo "<<setw(15)<<"Tipo "<<setw(15)<<"Premio "<<setw(15)<<"puntaje Base "
-				<<setw(15)<<"Puntajes Adicionales "<<setw(15)<<"Puntajes Totales ";
-				cout<<endl;
-				cout<<"==================================================================================";
-				for(int i=0;i<nPublicaciones;i++){
-					cout<<publicaciones[i].titulo<<setw(15)<<publicaciones[i].tipoP
-					<<setw(15)<<publicaciones[i].premio<<setw(15)<<publicaciones[i].baseP
-					<<setw(15)<<publicaciones[i].adicP<<setw(15)
-					<<autores[i].publicaciones[a.baseP + publicaciones[a].adicP;
-					cout<<endl;
-					cout<<"===================================================================";
-					cout<<endl;
-				}
-			}
-			else{
-				cout<<"Autor no encontrado!!\n";
-				break;
-			}
-		}
-		else if(opc == 2){
-			long long id = (long long)leer(true, "Ingrese el ID de la publicacion: ", 1, MAX_ID);
-            int pos = buscarAutor(id, autores, nAutores);
-            if(pos != -1){
-            	cout<<"Autor "<<setw(15)<<"Programa "<<setw(15)<<"cant. P. Obtenidos "<<setw(15)
-				<<"Id Publicacion "<<setw(15)<<"Titulo "<<setw(15)<<"Tipo "<<setw(15)<<"Premio "<<setw(15)<<"puntaje Base "
-				<<setw(15)<<"Puntajes Adicionales ";
-				cout<<endl;
-				for(int i=0;i<nPublicaciones;i++){
-					if(id == autores[i].idAutor){
-						cout<<autores[i].nom<<setw(15)<<autores[i].programa;
-					}
-					if(id == publicaciones[i].idAutor){
-						cout<<publicaciones[i].baseP + publicaciones[i].adicP<<setw(15)<<publicaciones[i].titulo<<setw(15)<<publicaciones[i].tipoP
-						<<setw(15)<<publicaciones[i].premio<<setw(15)<<publicaciones[i].baseP
-						<<setw(15)<<publicaciones[i].adicP<<setw(15);
-					}
-				}
-			}
-		}
-		else if(opc == 3){
-			cout<<"Listado General "<<endl;
-			cout<<"Autor"<<setw(15)<<"Publicacion"<<setw(15)<<"puntaje total"<<setw(15)<<"tipo de publicacion"<<setw(15)<<"puntaje total"<<setw(15)<<"premio"<<setw(15)<<"puntaje base"<<setw(15)<<"puntaje adicional";
-			cout<<endl;
-			for(int i=0;i<nPublicaciones;i++){
-				
-				cout<<publicasiones[i].nom<<setw(15)<<publicasiones[i].titulo<<setw(15)<<publicaciones[i].baseP + autor[i].publi[a].adicP<<
-				<<setw(15)<<publicaciones[i].tipoP
-				<<setw(15)<<publicaciones[i].premio<<setw(15)<<publicaciones[i].baseP
-						<<setw(15)<<publicaciones[i].adicP;
-				cout<<endl;
-				cout<<"=========================================================";
-				cout<<endl;
-				
-			}
-		}
-	}
-    getch();
+            if(pos == -1) {
+                cout << "\nAutor no encontrado.\n";
+                cout << "Presione una tecla para volver al menu...";
+                getch();
+                continue;
+            }
+
+            cout << "\n=== DATOS DEL AUTOR ===\n";
+            cout << "ID:       " << autores[pos].idAutor << endl;
+            cout << "Nombre:   " << autores[pos].nom << endl;
+            cout << "Correo:   " << autores[pos].email << endl;
+            cout << "Programa: " << autores[pos].programa << endl;
+
+            cout << "\n=== PUBLICACIONES DEL AUTOR ===\n";
+
+            bool tienePublicaciones = false;
+
+            for(int i = 0; i < nPublicaciones; i++) {
+				if(publicaciones[i].idAutor == autores[pos].idAutor) {
+				    tienePublicaciones = true;
+
+                    cout << "\n----------------------------------------\n";
+                    cout << "ID de publicacion: "<< publicaciones[i].idPubli << endl;
+                    cout << "Titulo:            "<< publicaciones[i].titulo << endl;
+                    cout << "Tipo:              "<< publicaciones[i].tipoP << endl;
+                    cout << "Anio:               "<< publicaciones[i].anio << endl;
+                    cout << "Premio:            "<< publicaciones[i].premio << endl;
+                    cout << "Puntaje base:      "<< publicaciones[i].baseP << endl;
+                    cout << "Puntaje adicional: "<< publicaciones[i].adicP << endl;
+                    cout << "Puntaje total:     "<< publicaciones[i].baseP + publicaciones[i].adicP << endl;
+                }
+            }
+
+            if(!tienePublicaciones) {
+                cout << "Este autor no tiene publicaciones registradas.\n";
+            }
+
+            cout << "\nPresione una tecla para volver al menu...";
+            getch();
+        }
+        else if(opc == 2) {
+            if(nPublicaciones == 0) {
+                cout << "\nNo hay publicaciones registradas.\n";
+                cout << "Presione una tecla para volver al menu...";
+                getch();
+                continue;
+            }
+
+            long long id = (long long)leer(
+                true, "Ingrese el ID de la publicacion: ", 1, MAX_ID
+            );
+
+            int pos = -1;
+
+            // Buscar por ID de publicacion.
+            for(int i = 0; i < nPublicaciones; i++) {
+                if(publicaciones[i].idPubli == id) {
+                    pos = i;
+                    break;
+                }
+            }
+
+            if(pos == -1) {
+                cout << "\nPublicacion no encontrada.\n";
+            }
+            else {
+                int posAutor = buscarAutor(
+                    publicaciones[pos].idAutor, autores, nAutores
+                );
+
+                cout << "\n=== DATOS DE LA PUBLICACION ===\n";
+                cout << "ID de publicacion: "<< publicaciones[pos].idPubli << endl;
+
+                if(posAutor != -1) {
+                    cout << "Autor:             "<< autores[posAutor].nom << endl;
+                    cout << "Programa:          "<< autores[posAutor].programa << endl;
+                }else {
+                    cout << "Autor:             "<< publicaciones[pos].autor << endl;
+                }
+
+                cout << "ID del autor:      "<< publicaciones[pos].idAutor << endl;
+                cout << "Titulo:            "<< publicaciones[pos].titulo << endl;
+                cout << "Tipo:              "<< publicaciones[pos].tipoP << endl;
+                cout << "Anio:              "<< publicaciones[pos].anio << endl;
+                cout << "Premio:            "<< publicaciones[pos].premio << endl;
+                cout << "Puntaje base:      "<< publicaciones[pos].baseP << endl;
+                cout << "Puntaje adicional: "<< publicaciones[pos].adicP << endl;
+                cout << "Puntaje total:     "<< publicaciones[pos].baseP + publicaciones[pos].adicP << endl;
+                cout << "Resumen:           "<< publicaciones[pos].abstract << endl;
+            }
+
+            cout << "\nPresione una tecla para volver al menu...";
+            getch();
+        }
+        else if(opc == 3) {
+            cout << "\n=== LISTADO GENERAL DE AUTORES Y PUBLICACIONES ===\n";
+
+            if(nAutores == 0) {
+                cout << "No hay autores registrados.\n";
+            }
+            else {
+                for(int a = 0; a < nAutores; a++) {
+                    cout << "\n========================================\n";
+                    cout << "Autor:    " << autores[a].nom << endl;
+                    cout << "ID:       " << autores[a].idAutor << endl;
+                    cout << "Programa: " << autores[a].programa << endl;
+
+                    bool tienePublicaciones = false;
+
+                    for(int p = 0; p < nPublicaciones; p++) {
+                        if(publicaciones[p].idAutor == autores[a].idAutor) {
+                            tienePublicaciones = true;
+
+                            cout << "\n  Publicacion:       "<< publicaciones[p].titulo << endl;
+                            cout << "  ID de publicacion: "<< publicaciones[p].idPubli << endl;
+                            cout << "  Tipo:              "<< publicaciones[p].tipoP << endl;
+                            cout << "  Anio:               "<< publicaciones[p].anio << endl;
+                            cout << "  Premio:            "<< publicaciones[p].premio << endl;
+                            cout << "  Puntaje base:      "<< publicaciones[p].baseP << endl;
+                            cout << "  Puntaje adicional: "<< publicaciones[p].adicP << endl;
+                            cout << "  Puntaje total:     "<< publicaciones[p].baseP+ publicaciones[p].adicP << endl;
+                        }
+                    }
+
+                    if(!tienePublicaciones) {
+                        cout << "  Sin publicaciones registradas.\n";
+                    }
+                }
+            }
+
+            cout << "\nPresione una tecla para volver al menu...";
+            getch();
+        }
+    }
 }
+
+
 void estadisticas(const autor autores[], int nAutores, const publicacion publicaciones[], int nPublicaciones){
     cout << "En construccion..." << endl;
     getch();
