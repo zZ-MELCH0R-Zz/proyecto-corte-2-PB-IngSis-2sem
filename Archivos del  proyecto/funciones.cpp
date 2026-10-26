@@ -1,6 +1,5 @@
 #include "funciones.h"
 #include "MyString.h"
-#include "MyEditor.h"
 #include <ctype.h>
 #include <time.h>
 #include <windows.h>
@@ -29,8 +28,8 @@ static const char PREMIOS[4][60] = {
 };
 static const int PUNTOS_ADIC[4] = {5, 3, 2, 0};
 
-static const char COLORES[7][60] = {
-    "Rojo", "Verde", "Amarillo", "Azul", "Magenta", "Cian", "Blanco"
+static const char COLORES[8][60] = {
+    "Sin color", "Rojo", "Verde", "Amarillo", "Azul", "Magenta", "Cian", "Blanco"
 };
 
 //===== DEFINICIONES DE FUNCIONES ====//
@@ -486,12 +485,20 @@ void editarAbstract(publicacion &nueva){
         if(op == 1){
             analizarTexto(nueva.abstract);
         }else if(op == 2){
-            editarTexto(nueva.abstract);
+            editarTexto(nueva.abstract, nueva.colorAbs);
         }else if(op == 3){
             PUBLISOFT_EDITOR(nueva.abstract, sizeof(nueva.abstract));
         }else{
             return;
         }
+    }
+}
+
+void mostrarAbstract(const publicacion &p){
+    if(p.colorAbs > 0){
+        cout << "\033[" << 30 + p.colorAbs << "m" << p.abstract << "\033[0m";
+    }else{
+        cout << p.abstract;
     }
 }
 
@@ -525,7 +532,7 @@ void analizarTexto(const char texto[]){
     }
 }
 
-void editarTexto(char texto[]){
+void editarTexto(char texto[], int &colorAbs){
     while(true){
         system("cls");
         cout << "================ Editar texto ================" << endl;
@@ -563,9 +570,14 @@ void editarTexto(char texto[]){
                 cout << "Listo: " << texto << endl;
                 break;
             case 'E': {
-                int color = elegirOpcion("Color del texto:", COLORES, 7) + 1;
+                int color = elegirOpcion("Color del texto:", COLORES, 8);
+                colorAbs = color;   //se guarda el color
                 cout << endl;
-                asignarColor(texto, color);
+                if(color > 0){
+					asignarColor(texto, color); 
+				}else{ 
+					cout << texto << endl; 
+				}
                 break;
             }
         }
@@ -597,7 +609,7 @@ void actualizarDatos(autor autores[], int nAutores, publicacion publicaciones[],
                 cout << "Correo: " << autores[pos].email << endl;
                 cout << "Programa: " << autores[pos].programa << endl;
 
-                // Mostrar datos y preguntar si desea modificar[cite: 3]
+                // Mostrar datos y preguntar si desea modificar
                 int mod = (int)leer(true, "\nDesea modificar la informacion registrada? (1=Si, 0=No): ", 0, 1);
                 if(mod == 1){
                     system("cls");
@@ -638,8 +650,8 @@ void actualizarDatos(autor autores[], int nAutores, publicacion publicaciones[],
                 cout << "Ano: " << publicaciones[pos].anio << endl;
                 cout << "Premio: " << publicaciones[pos].premio << endl;
                 mostrarPuntos(publicaciones[pos]);
-
-                int mod = (int)leer(true, "\nDesea actualizar algun dato? (1=Si, 0=No): ", 0, 1);
+				cout<<endl;
+                int mod = (int)leer(true, "Desea actualizar algun dato? (1=Si, 0=No): ", 0, 1);
                 if(mod == 1){
                     system("cls");
                     cout << "Cual de los siguientes desea cambiar?\n";
@@ -649,17 +661,18 @@ void actualizarDatos(autor autores[], int nAutores, publicacion publicaciones[],
                     if(campo == 1){
                         leer(false, "Ingrese nuevo titulo: ", 0, 99, publicaciones[pos].titulo);
                     }else if(campo == 2){
-                        tipoPublicacion(publicaciones[pos]); // Recalcula puntos base automáticamente[cite: 3, 4]
+                        tipoPublicacion(publicaciones[pos]); // Recalcula puntos base automaticamente
                         cout << "\nPuntos base recalculados con exito.\n";
                     }else if(campo == 3){
                         time_t ahora = time(0);
                         int anioActual = localtime(&ahora)->tm_year + 1900;
                         publicaciones[pos].anio = (int)leer(true, "Ingrese nuevo ano: ", 1900, anioActual);
                     }else if(campo == 4){
-                        premioPublicacion(publicaciones[pos]); // Recalcula puntos adicionales automáticamente[cite: 3, 4]
+                        premioPublicacion(publicaciones[pos]); // Recalcula puntos adicionales automaticamente
                         cout << "\nPuntos adicionales recalculados con exito.\n";
                     }else if(campo == 5){
                         leer(false, "Ingrese nuevo abstract: ", 0, 499, publicaciones[pos].abstract);
+                        publicaciones[pos].colorAbs = 0;
                         editarAbstract(publicaciones[pos]);
                     }
                     cout << "\nPublicacion actualizada con exito.\n";
@@ -674,21 +687,6 @@ void actualizarDatos(autor autores[], int nAutores, publicacion publicaciones[],
         }
     }
 }
-
-
-void reportes(const autor autores[], int nAutores, const publicacion publicaciones[], int nPublicaciones) {
-    while(true) {
-        system("cls");
-        cout << "1. Consultar Autor\n";
-        cout << "2. Consultar una Publicacion\n";
-        cout << "3. Listado de Autores y sus Publicaciones\n";
-        cout << "4. Salir\n";
-
-        int opc = (int)leer(true, "   Opcion --> ", 1, 4);
-
-        if(opc == 4) {
-            break;
-        }
 
 void reportes(const autor autores[], int nAutores, const publicacion publicaciones[], int nPublicaciones){
     while(true){
@@ -799,9 +797,10 @@ void reportes(const autor autores[], int nAutores, const publicacion publicacion
                 cout << "Premio:            " << publicaciones[pos].premio << endl;
                 cout << "Puntaje base:      " << publicaciones[pos].baseP << endl;
                 cout << "Puntaje adicional: " << publicaciones[pos].adicP << endl;
-                cout << "Puntaje total:     "
-                     << publicaciones[pos].baseP + publicaciones[pos].adicP << endl;
-                cout << "Resumen:           " << publicaciones[pos].abstract << endl;
+                cout << "Puntaje total:     " << publicaciones[pos].baseP + publicaciones[pos].adicP << endl;
+                cout << "Resumen:           ";
+				mostrarAbstract(publicaciones[pos]);
+				cout << endl;
             }
 
             cout << "\nPresione una tecla para volver al menu...";
@@ -848,7 +847,95 @@ void reportes(const autor autores[], int nAutores, const publicacion publicacion
     }
 }
 
+static int cad_cmp(const char a[], const char b[]){
+    int i = 0;
+    while(a[i] != '\0' && a[i] == b[i]){
+        i++;
+    }
+    return a[i] - b[i];
+}
+
 void estadisticas(const autor autores[], int nAutores, const publicacion publicaciones[], int nPublicaciones){
-    cout << "En construccion..." << endl;
-    getch();
+    if(nAutores == 0 || nPublicaciones == 0){
+        cout << "No hay datos suficientes para mostrar estadisticas." << endl;
+        cout << "Presione una tecla para volver al menu ";
+        getch();
+        return;
+    }
+
+    int puntos[MAX_AUTORES] = {0};
+    int cantidad[MAX_AUTORES] = {0};
+    bool conPremio[MAX_AUTORES] = {false};
+    int porTipo[5] = {0};
+    int ptsTipo[5] = {0};          // puntos acumulados por tipo
+
+    for(int i = 0; i < nPublicaciones; i++){
+        int a = buscarAutor(publicaciones[i].idAutor, autores, nAutores);
+        if(a != -1){
+            puntos[a] += publicaciones[i].baseP + publicaciones[i].adicP;
+            cantidad[a]++;
+            if(publicaciones[i].adicP > 0){
+                conPremio[a] = true;
+            }
+        }
+        for(int t = 0; t < 5; t++){
+            if(cad_cmp(publicaciones[i].tipoP, TIPOS[t]) == 0){
+                porTipo[t]++;
+                ptsTipo[t] += publicaciones[i].baseP + publicaciones[i].adicP;
+            }
+        }
+    }
+
+    // A. Autores y numero de publicaciones
+    cout << "Listado de autores con su numero de publicaciones" << endl;
+    cout << left << setw(30) << "Autor" << right << "Cant. publicaciones" << endl;
+    cout << "========================================================" << endl;
+    for(int i = 0; i < nAutores; i++){
+        cout << left << setw(30) << autores[i].nom << right << cantidad[i] << endl;
+    }
+    cout << endl;
+    
+
+    // B. Porcentaje de autores con premio
+    int nPremiados = 0;
+    for(int i = 0; i < nAutores; i++){
+        if(conPremio[i]) nPremiados++;
+    }
+    cout << "Porcentaje de autores con alguna premiacion: "<< (nPremiados * 100.0) / nAutores << "%" << endl;
+
+
+    // C y D. Autor con mas y menos puntos totales (el minimo, entre quienes tienen publicaciones)
+    int iMax = 0, iMin = -1;
+    for(int i = 0; i < nAutores; i++){
+        if(puntos[i] > puntos[iMax]){
+        	 iMax = i;
+		}
+        if(cantidad[i] > 0 && (iMin == -1 || puntos[i] < puntos[iMin])) {
+        	iMin = i;	
+		}
+    }
+    cout << "Autor con mayor numero de puntos totales: " << autores[iMax].nom << endl;
+    cout << " - Cant. puntos: " << puntos[iMax] << endl;
+    cout << endl;
+    
+    cout << "Autor con menor numero de puntos totales: " << autores[iMin].nom << endl;
+    cout << " - Cant. puntos: " << puntos[iMin] << endl;
+    cout << endl;
+    
+
+    // E. Tipo de publicacion con mas registros
+    int tMax = 0;
+    for(int t = 1; t < 5; t++){
+        if(porTipo[t] > porTipo[tMax]){
+        	tMax = t;
+        }
+    }
+    cout << "Tipo de publicacion con mas registros: " << TIPOS[tMax] << endl;
+    cout << " - Porcentaje: " << (porTipo[tMax] * 100.0) / nPublicaciones << "%" << endl;
+    cout << endl;
+    if(porTipo[tMax] > 0){
+        cout << "Puntos promedio: " << (double)ptsTipo[tMax] / porTipo[tMax] << endl;
+    }
+    cout << endl << endl;
+    system("pause");
 }

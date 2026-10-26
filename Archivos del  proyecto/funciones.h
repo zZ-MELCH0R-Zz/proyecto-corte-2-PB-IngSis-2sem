@@ -7,7 +7,7 @@ using namespace std;
 
 
 //=================== CAPACIDADES =================//
-const int MAX_AUTORES = 2;
+const int MAX_AUTORES = 100;
 const int MAX_PUBLICACIONES = 200;
 
 //=================== ESTRUCTURAS =================//
@@ -29,6 +29,7 @@ struct publicacion{
     char abstract[500];
     int baseP;
     int adicP;
+    int colorAbs;
 };
 
 //=============== FUNCIONES ==============//
@@ -60,7 +61,8 @@ void mostrarPuntos(const publicacion &p);
 //=============== EDITOR My WP ==============//
 void editarAbstract(publicacion &nueva);
 void analizarTexto(const char texto[]);
-void editarTexto(char texto[]);
+void editarTexto(char texto[], int &colorAbs);
+void mostrarAbstract(const publicacion &p);   // imprime el abstract con su color guardado
 
 
 //===== PUBLISOFT EDITOR ======//

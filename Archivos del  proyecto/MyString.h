@@ -1,6 +1,6 @@
 #pragma once
 
-// Libreria personal MyString: una funcion por cada proceso del editor My WP
+// Libreria MyString, una funcion por cada proceso del editor My WP
 
 //----- Analizar texto -----
 int totalCaracteres(const char t[]);   // A
